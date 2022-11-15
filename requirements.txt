@@ -1,0 +1,4 @@
+colormap==1.0.4
+extcolors==1.0.0
+numpy==1.17.4
+Pillow==9.3.0
