@@ -5,6 +5,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import cv2
 import extcolors
 import numpy as np
 import tqdm
@@ -17,18 +18,18 @@ from colormath.color_objects import sRGBColor as cm_sRGBColor
 from dotenv import load_dotenv
 from PIL import Image
 
-load_dotenv()
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./youtubeapi.json"
-DEVELOPER_KEY = os.getenv('DEVELOPER_KEY')
+# load_dotenv()
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./youtubeapi.json"
+# DEVELOPER_KEY = os.getenv('DEVELOPER_KEY')
 
-YOUTUBE_API_SERVICE_NAME = 'youtube'
-YOUTUBE_API_SERVICE_VERSION = 'v3'
+# YOUTUBE_API_SERVICE_NAME = 'youtube'
+# YOUTUBE_API_SERVICE_VERSION = 'v3'
 
-youtube = build(
-    YOUTUBE_API_SERVICE_NAME,
-    YOUTUBE_API_SERVICE_VERSION,
-    developerKey=DEVELOPER_KEY
-)
+# youtube = build(
+#     YOUTUBE_API_SERVICE_NAME,
+#     YOUTUBE_API_SERVICE_VERSION,
+#     developerKey=DEVELOPER_KEY
+# )
 Image.MAX_IMAGE_PIXELS = 1000000000
 XYZ_MATRIX = np.array([
             [0.4124, 0.2126, 0.0193],
@@ -36,7 +37,7 @@ XYZ_MATRIX = np.array([
             [0.1805, 0.0722, 0.9505]
             ])
 class MisaicArt:
-    image_resolution = 100
+    image_resolution = 50
     # def trimme_youtube_thumnail_image():
 
     def download_image(detect_word):
@@ -81,41 +82,9 @@ class MisaicArt:
             average_color_list=str(colors_x).replace('([((', '').replace(' ', '').split(')')[0].split(',')
             df_rgb=[int(average_color_list[0]),int(average_color_list[1]),int(average_color_list[2])]
             df_color_up = rgb2hex(df_rgb[0],df_rgb[1],df_rgb[2])
-            if color_dict.get(df_color_up) is not None:
+            if color_dict.get(df_color_up) is None:
                 color_dict[df_color_up]=str(trimmed_img).replace('color_code_img','trimmed_img')
                 color_dict[df_color_up]=str(trimmed_img).replace('color_code_img','trimmed_img')
-
-            # if int(colors_pre_list[0].split(')')[1].replace(', ',''))>int(MisaicArt.image_resolution**2/1.5):
-            #     df_rgb=[int(average_color_list[0][0]),int(average_color_list[0][1]),int(average_color_list[0][2])]
-            #     df_color_up = rgb2hex(df_rgb[0],df_rgb[1],df_rgb[2])
-            #     color_dict[df_color_up]=str(trimmed_img)
-            # elif int(colors_pre_list[0].split(')')[1].replace(', ','')+colors_pre_list[1].split(')')[1].replace(', ',''))>int(MisaicArt.image_resolution**2/1.2) and MisaicArt.calculate_color_distance(average_color_list[0],average_color_list[1])<5:
-            #     df_rgb=[int((average_color_list[0][0]+average_color_list[1][0])/2),int((average_color_list[0][1]+average_color_list[1][1])/2),int((average_color_list[0][2]+average_color_list[1][2])/2)]
-            #     df_color_up = rgb2hex(df_rgb[0],df_rgb[1],df_rgb[2])
-            #     color_dict[df_color_up]=str(trimmed_img)
-            # elif int(colors_pre_list[0].split(')')[1].replace(', ','')+colors_pre_list[1].split(')')[1].replace(', ','')+colors_pre_list[2].split(')')[1].replace(', ',''))>int(MisaicArt.image_resolution**2/1.2) and MisaicArt.calculate_color_distance(average_color_list[0],average_color_list[1])<5 and MisaicArt.calculate_color_distance(average_color_list[0],average_color_list[1])<5:
-            #     df_rgb=[int((average_color_list[0][0]+average_color_list[1][0])/2),int((average_color_list[0][1]+average_color_list[1][1])/2),int((average_color_list[0][2]+average_color_list[1][2])/2)]
-            #     df_color_up = rgb2hex(df_rgb[0],df_rgb[1],df_rgb[2])
-            #     color_dict[df_color_up]=str(trimmed_img)
-
-
-            # elif int(colors_pre_list[0].split(')')[1].replace(', ','')+colors_pre_list[1].split(')')[1].replace(', ',''))>int(MisaicArt.image_resolution**2/2) and MisaicArt.calculate_color_distance((average_color_list))
-            # elif int(colors_pre_list[0].split(',')[3].replace(')',''))+int(colors_pre_list[1].split(',')[3].replace(')',''))>color_hardle[1]:
-            #     average_color=[0,0,0]
-            #     for i in range(2):
-            #         for j in range(2):
-            #             average_color[j] +=int(average_color_list[i][j])
-            #     df_rgb=[int(average_color[0]/2),int(average_color[1]/2),int(average_color[2]/2)]
-            #     df_color_up = rgb2hex(df_rgb[0],df_rgb[1],df_rgb[2])
-            #     color_dict[df_color_up]=str(trimmed_img)
-            # else:
-            #     average_color=[0,0,0]
-            #     for i in range(3):
-            #         for j in range(3):
-            #             average_color[j] +=int(average_color_list[i][j])
-            #     df_rgb=[int(average_color[0]/3),int(average_color[1]/3),int(average_color[2]/3)]
-            #     df_color_up = rgb2hex(df_rgb[0],df_rgb[1],df_rgb[2])
-            #     color_dict[df_color_up]=str(trimmed_img)
         with open('color_dict.json', 'w') as f:
             json.dump(color_dict, f, indent=2, ensure_ascii=False)
 
@@ -234,7 +203,56 @@ class MisaicArt:
                 color_accuracy += 1 if MisaicArt.calculate_color_distance(img_rgb_list,compare_img_rgb_list)<10 else 0
                 # color_accuracy += (196608.0 - MisaicArt.calculate_color_distance(img_rgb_list,compare_img_rgb_list))/196608
         print(f"{int(color_accuracy/(resize*resize)*100)}%")
+def shape_movie_image():
+    p = Path('cut_image/')
+    src_img_list = list(p.glob('*.png'))
+    for i,src_img in enumerate(src_img_list):
+        img = Image.open(src_img)
+        rotate_img =img.rotate(180)
+        crop_img = rotate_img.crop((320-265,0,320+265,296))
+        crop_img.save(src_img)
+def save_all_frames(video_path, dir_path, basename, ext='png'):
+    cap = cv2.VideoCapture(video_path)
 
+    if not cap.isOpened():
+        return
+
+    os.makedirs(dir_path, exist_ok=True)
+    base_path = os.path.join(dir_path, basename)
+
+    digit = len(str(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))))
+
+    n = 0
+
+    while True:
+        ret, frame = cap.read()
+        if ret:
+            cv2.imwrite(f'{base_path}_{str(n).zfill(digit)}.{ext}', frame)
+            n += 1
+        else:
+            return
+def convert_img_to_movie():
+    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    video = cv2.VideoWriter('video.mp4',fourcc, 20.0, ( 10000,17947))
+    directory = os.listdir("./made_img")
+    files = [f for f in directory if os.path.isfile(os.path.join("./made_img", f))]
+    for file in files :
+        # hoge0000.png, hoge0001.png,..., hoge0090.png
+        if ".png" in file:
+            img = cv2.imread(file)
+
+            # can't read image, escape
+            if img is None:
+                print("can't read")
+                break
+
+            # add
+            video.write(img)
+
+    video.release()
+    print('written')
+# save_all_frames("./seed_movie/test.mp4","./cut_image","test")
+# shape_movie_image()
 class GetYouTube:
     @classmethod
     def get_song_dict_of_channel_by_detect_word(cls,detect_word:str):
@@ -275,14 +293,11 @@ class GetYouTube:
                 break
         return song_dicts_array_of_vocaloP
 # MisaicArt.download_image('ピノキオピー')
-MisaicArt.trimm_png()
-test = MisaicArt
-# print(test.calculate_color_distance([255,255,255],[0,0,0]))
+# MisaicArt.trimm_png()
 
-
-p = Path('seed_img/')
-src_img_list = list(p.glob('*.png'))
-MisaicArt.exact_color(36)
-for src_img in tqdm.tqdm(src_img_list,position=0,desc= f"{'generate_pixel_image': <25}"):
-    MisaicArt.make_pixel_picure(src_img,100,False)
-# MisaicArt.compare_image("./70008500made_picture.png",True,100)
+# MisaicArt.exact_color(36)
+# p = Path('cut_image/')
+# src_img_list = list(p.glob('*.png'))
+# for src_img in tqdm.tqdm(src_img_list,position=0,desc= f"{'generate_pixel_image': <25}"):
+#     MisaicArt.make_pixel_picure(src_img,50,False)
+convert_img_to_movie()

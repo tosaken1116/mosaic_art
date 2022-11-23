@@ -3,3 +3,4 @@
 *.Identifier
 .env
 *.pyc
+*.mp4
